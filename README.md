@@ -1,3 +1,18 @@
+def traverse_tree(node):
+    if "prompt" in node:
+        return node["prompt"]
+    elif "value" in node:
+        return node["value"]
+    elif isinstance(node, list):
+        return ", ".join(node)
+    elif not node:
+        global current_node
+        current_node = decision_tree
+        return "Back to the root of the decision tree."
+    else:
+        options = list(node.keys())
+        return f"Available keys: {', '.join(options)}"
+        
 import gradio as gr
 import json
 
