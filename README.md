@@ -1,49 +1,62 @@
 import gradio as gr
+import json
 
-# Decision tree represented as a nested dictionary
-decision_tree = {
-    "Question 1": {
-        "Option 1": "Response to Option 1 for Question 1",
-        "Option 2": "Response to Option 2 for Question 1",
-        "Option 3": {
-            "Subquestion 1": {
-                "Suboption 1": "Response to Suboption 1 for Subquestion 1",
-                "Suboption 2": "Response to Suboption 2 for Subquestion 1"
+# Dummy JSON response representing a decision tree
+decision_tree_json = {
+    "profile_id_1": {
+        "question": "Is the customer active?",
+        "options": {
+            "Yes": {
+                "question": "Is the customer a premium member?",
+                "options": {
+                    "Yes": {
+                        "decision": "Offer premium discount"
+                    },
+                    "No": {
+                        "decision": "Offer regular discount"
+                    }
+                }
+            },
+            "No": {
+                "decision": "Do not offer discount"
+            }
+        }
+    },
+    "profile_id_2": {
+        "question": "Is the user a frequent visitor?",
+        "options": {
+            "Yes": {
+                "decision": "Offer loyalty points"
+            },
+            "No": {
+                "decision": "Encourage to visit more"
             }
         }
     }
 }
 
-# Function to traverse the decision tree
-def traverse_decision_tree(current_question):
-    options = list(decision_tree[current_question].keys())
-    response = decision_tree[current_question]
+def traverse_decision_tree(profile_id):
+    try:
+        decision_tree = decision_tree_json[profile_id]
+        return decision_tree
+    except KeyError:
+        return {"error": "Profile ID not found"}
 
-    if isinstance(response, dict):
-        # If response is a dictionary, display keys as options
-        return response, options
+def chatbot(input_text):
+    if "profile_id" in input_text.lower():
+        profile_id = input_text.split()[-1]
+        response = traverse_decision_tree(profile_id)
+        return json.dumps(response, indent=4)
     else:
-        # If response is a string, display the response
-        return response, []
+        return "Please include a profile ID in your input."
 
-# Chatbot function
-def chatbot(message):
-    if "profile id" in message.lower():
-        # If user's message contains "profile id", enter the decision tree program
-        return traverse_decision_tree("Question 1")
-    else:
-        return "Please input a message containing 'profile id'", []
+# Create a Gradio ChatInterface
+dem = gr.ChatInterface(fn=chatbot, inputs="text", outputs="text", title="Decision Tree Chatbot",
+                                     description="Ask questions related to a profile ID to get decision tree")
 
-# Create a Gradio chatbot
-demo = gr.Chatbot(
-    chatbot=chatbot,
-    title="Decision Tree Chatbot",
-    layout="vertical",
-    inputs=[gr.Textbox(label="Type your message containing 'profile id' here:")],
-    outputs=[gr.Textbox(label="Response"), gr.outputs.Chat(label="Options", options=[])]
-)
+# Launch the interface
+demo.queue()
 
-chatbot.queue()
 
 
 =====================
