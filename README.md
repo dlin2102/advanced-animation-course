@@ -61,52 +61,37 @@ demo.queue()
 
 =====================
 import gradio as gr
+import json
 
-# Decision tree represented as a nested dictionary
-decision_tree = {
-    "Question 1": {
-        "Option 1": "Response to Option 1 for Question 1",
-        "Option 2": "Response to Option 2 for Question 1",
-        "Option 3": {
-            "Subquestion 1": {
-                "Suboption 1": "Response to Suboption 1 for Subquestion 1",
-                "Suboption 2": "Response to Suboption 2 for Subquestion 1"
-            }
-        }
-    }
-}
+# Load the decision tree from JSON
+with open("decision_tree.json", "r") as file:
+    decision_tree = json.load(file)
 
-# Function to traverse the decision tree
-def traverse_decision_tree(current_question):
-    options = list(decision_tree[current_question].keys())
-    response = decision_tree[current_question]
+current_node = decision_tree
 
-    if isinstance(response, dict):
-        # If response is a dictionary, display keys as options
-        return response, options
+def traverse_tree(node):
+    if "prompt" in node:
+        return node["prompt"]
     else:
-        # If response is a string, display the response
-        return response, []
+        options = list(node.keys())
+        return f"Available keys: {', '.join(options)}"
 
-# Chatbot function
-def chatbot(question):
-    if "profile id" in question.lower():
-        # If user's message contains "profile id", enter the decision tree program
-        return traverse_decision_tree("Question 1")
+def decision_tree_bot(profile_id):
+    global current_node
+
+    if profile_id in current_node:
+        current_node = current_node[profile_id]
+        return traverse_tree(current_node)
+    elif profile_id in current_node.get("options", {}):
+        current_node = current_node["options"][profile_id]
+        return traverse_tree(current_node)
     else:
-        options = ["Option 1", "Option 2", "Option 3"]  # Default options
-        response = f"You selected: {question}"  # Placeholder response
-        return response, options
+        return "Invalid input. Please enter a valid key."
 
-# Create a Gradio interface
-gr.Interface(
-    fn=chatbot,
-    inputs="text",
-    outputs=["text", gr.outputs.CheckboxGroup(choices=["Option 1", "Option 2", "Option 3"])],
-    title="Clickable Options Chatbot",
-    description="Type your message here:",
-    theme="compact"
-).launch()
+# Interface
+iface = gr.ChatbotInterface(fn=decision_tree_bot, title="Decision Tree Chatbot", placeholder="Enter profile ID")
+iface.launch()
+
 
 # Course Material and FAQ for my Advanced CSS Course
 
